@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>ЛР 5 - Flask Додаток</title>
+    <!-- Підключення CSS за допомогою url_for -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">Головна (ToDo)</a>
+        <a href="{{ url_for('about') }}">Про автора</a>
+        <a href="{{ url_for('hello', name='Гість') }}">Привітання</a>
+    </nav>
+
+    <div class="container">
+        <!-- Сюди буде вставлятися контент інших сторінок -->
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

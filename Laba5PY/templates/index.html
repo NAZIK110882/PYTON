@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ welcome_text }}</h1>
+    <h2>Мій ToDo-список</h2>
+    
+    <form action="/" method="POST">
+        <input type="text" name="content" placeholder="Введіть нове завдання..." required>
+        <input type="submit" value="Додати">
+    </form>
+
+    <ul class="task-list">
+        {% for task in tasks %}
+            <li class="task-item">
+                <span>{{ task.content }}</span>
+                <a class="btn" href="{{ url_for('delete', id=task.id) }}">Видалити</a>
+            </li>
+        {% else %}
+            <p>Список порожній. Додайте перше завдання!</p>
+        {% endfor %}
+    </ul>
+{% endblock %}
