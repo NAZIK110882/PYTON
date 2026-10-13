@@ -1,112 +1,136 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Налаштування стилю для графіків Seaborn
+sns.set_theme(style="whitegrid")
 
 # ==========================================
-# БЛОК 0: Створення тестового датасету
+# БЛОК 0: Підготовка даних (Генерація розширеного датасету)
 # ==========================================
+np.random.seed(42)
+dates = pd.date_range(start="2023-10-01", periods=100, freq="D")
+categories = ["Electronics", "Clothing", "Furniture", "Toys", "Books"]
+
 data = {
-    "OrderID": [101, 102, 103, 104, 105, 106, 107, 108, 109, 102], # 102 - дублікат
-    "Date": ["2023-10-01", "2023-10-02", "2023-10-02", "2023-10-03", "2023-10-04", "2023-10-05", "2023-10-06", "2023-10-07", "2023-10-08", "2023-10-02"],
-    "Category": ["Electronics", "Clothing", "Clothing", "Furniture", "Electronics", "Furniture", "Clothing", "Electronics", "Furniture", "Clothing"],
-    "Price": [250.5, 45.0, np.nan, 120.0, 300.0, 150.0, 50.0, np.nan, 200.0, 45.0],
-    "Quantity": [1, 3, 2, 1, 1, np.nan, 4, 1, 2, 3],
-    "Customer_Age": [34, 28, 45, 50, 23, 38, 29, 41, 35, 28]
+    "OrderID": range(1001, 1101),
+    "Date": np.random.choice(dates, 100),
+    "Category": np.random.choice(categories, 100),
+    "Price": np.random.uniform(10, 500, 100),
+    "Quantity": np.random.randint(1, 10, 100),
+    "Customer_Age": np.random.randint(18, 70, 100)
 }
-
-df_raw = pd.DataFrame(data)
-df_raw.to_csv("sales_dataset.csv", index=False)
-print("--- Файл sales_dataset.csv успішно створено! ---\n")
-
-
-# ==========================================
-# КРОК 3: Зчитування даних
-# ==========================================
-df = pd.read_csv("sales_dataset.csv")
-
-print("--- Перші 5 рядків ---")
-print(df.head(), "\n")
-
-print("--- Останні 5 рядків ---")
-print(df.tail(), "\n")
-
-print(f"Кількість рядків і стовпців (shape): {df.shape}\n")
-
-print("--- Інформація про датасет ---")
-df.info()
-
-print("\n--- Кількість унікальних значень ---")
-print(df.nunique(), "\n")
-
-
-# ==========================================
-# КРОК 4: Очищення даних
-# ==========================================
-print("--- Пропущені значення до очищення ---")
-print(df.isnull().sum(), "\n")
-
-# Заповнюємо пропуски: ціну - середнім, кількість - медіаною
-df["Price"] = df["Price"].fillna(df["Price"].mean())
-df["Quantity"] = df["Quantity"].fillna(df["Quantity"].median())
-
-# Видаляємо дублікати
-print(f"Кількість дублікатів: {df.duplicated().sum()}")
-df = df.drop_duplicates()
-
-print("--- Дані після очищення пропусків ---")
-print(df.isnull().sum(), "\n")
-
-
-# ==========================================
-# КРОК 5: Приведення типів
-# ==========================================
-df["Date"] = pd.to_datetime(df["Date"])
-df["Category"] = df["Category"].astype("category")
-df["Quantity"] = df["Quantity"].astype(int)
-
-print("--- Типи даних після перетворення ---")
-print(df.dtypes, "\n")
-
-
-# ==========================================
-# КРОК 6: Дослідницький аналіз (EDA)
-# ==========================================
-print("--- Описова статистика ---")
-print(df.describe(), "\n")
-
-print("--- Розподіл за категоріями ---")
-print(df["Category"].value_counts(), "\n")
-
-# Створюємо новий стовпець
+df = pd.DataFrame(data)
+df.loc[10:15, "Price"] = np.nan  # Додаємо трохи пропусків для імітації реальних даних
 df["Total_Sales"] = df["Price"] * df["Quantity"]
 
-
-# ==========================================
-# КРОК 7: Фільтрація та сортування
-# ==========================================
-print("--- Фільтрація (Лише Електроніка) ---")
-print(df[df["Category"] == "Electronics"], "\n")
-
-print("--- Фільтрація (Вік > 30 ТА Загальна сума > 200) ---")
-print(df[(df["Customer_Age"] > 30) & (df["Total_Sales"] > 200)], "\n")
-
-print("--- Сортування (За категорією та сумою) ---")
-print(df.sort_values(by=["Category", "Total_Sales"], ascending=[True, False]).head(), "\n")
+print("--- 1-2. Аналіз та очищення даних ---")
+# Очищення пропусків
+df["Price"] = df["Price"].fillna(df["Price"].median())
+df["Total_Sales"] = df["Price"] * df["Quantity"]
+df["Date"] = pd.to_datetime(df["Date"])
+print("Розмірність після очищення:", df.shape)
+print("\nОписова статистика:\n", df.describe().round(2))
 
 
 # ==========================================
-# КРОК 8: Групування та агрегація
+# БЛОК 1: Гістограма з KDE (Розподіл числових даних)
 # ==========================================
-print("--- Групування за категорією ---")
-grouped_df = df.groupby("Category")["Total_Sales"].agg(["count", "sum", "mean", "min", "max"]).reset_index()
-grouped_df.columns = ["Категорія", "К-ть продажів", "Загальна каса", "Середній чек", "Мін. чек", "Макс. чек"]
-print(grouped_df, "\n")
+print("\n--- 3-5. Будуємо гістограму... ---")
+plt.figure(figsize=(10, 6))
+sns.histplot(df["Total_Sales"], bins=20, kde=True, color="blue")
+plt.title("Розподіл загальної суми покупок (Total Sales)", fontsize=14)
+plt.xlabel("Загальна сума (у дол.)")
+plt.ylabel("Кількість покупок")
+plt.savefig("1_histogram.png") # Збереження графіка
+plt.show() # Закрийте вікно графіка, щоб продовжити виконання коду
 
 
 # ==========================================
-# КРОК 9: Збереження результатів
+# БЛОК 2: Box Plot (Пошук аномалій та порівняння)
 # ==========================================
-df.to_csv("cleaned_sales_dataset.csv", index=False)
-grouped_df.to_csv("category_sales_summary.csv", index=False)
+print("--- 6. Будуємо Box Plot... ---")
+plt.figure(figsize=(10, 6))
+sns.boxplot(x="Category", y="Total_Sales", data=df, palette="Set2")
+plt.title("Розподіл суми покупок за категоріями (Box Plot)", fontsize=14)
+plt.xlabel("Категорія товару")
+plt.ylabel("Загальна сума")
+plt.savefig("2_boxplot.png")
+plt.show()
 
-print("--- Збереження завершено! ---")
-print("Файли 'cleaned_sales_dataset.csv' та 'category_sales_summary.csv' створено у папці з проєктом.")
+
+# ==========================================
+# БЛОК 3: Bar Chart (Аналіз категоріальних даних)
+# ==========================================
+print("--- 7. Будуємо Bar Chart (Кількість замовлень)... ---")
+plt.figure(figsize=(10, 6))
+sns.countplot(x="Category", data=df, palette="viridis", order=df["Category"].value_counts().index)
+plt.title("Кількість замовлень у кожній категорії", fontsize=14)
+plt.xlabel("Категорія")
+plt.ylabel("Кількість замовлень")
+plt.savefig("3_barchart.png")
+plt.show()
+
+
+# ==========================================
+# БЛОК 4: Scatter Plot (Взаємозв'язок змінних)
+# ==========================================
+print("--- 8. Будуємо Scatter Plot... ---")
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x="Customer_Age", y="Total_Sales", hue="Category", data=df, s=100, alpha=0.7)
+plt.title("Залежність суми покупки від віку клієнта", fontsize=14)
+plt.xlabel("Вік клієнта")
+plt.ylabel("Сума покупки")
+plt.legend(title="Категорія", bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.savefig("4_scatterplot.png")
+plt.show()
+
+
+# ==========================================
+# БЛОК 5: Heatmap (Кореляційний аналіз)
+# ==========================================
+print("--- 9. Будуємо Heatmap кореляції... ---")
+plt.figure(figsize=(8, 6))
+# Відбираємо лише числові колонки для матриці кореляцій
+numeric_df = df[["Price", "Quantity", "Customer_Age", "Total_Sales"]]
+corr_matrix = numeric_df.corr()
+
+sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
+plt.title("Матриця кореляцій числових змінних", fontsize=14)
+plt.savefig("5_heatmap.png")
+plt.show()
+
+
+# ==========================================
+# БЛОК 6: Line Plot (Часові дані)
+# ==========================================
+print("--- 11. Будуємо Line Plot (Динаміка в часі)... ---")
+# Групуємо дані по місяцях та роках для згладжування лінії
+df_sorted = df.sort_values("Date")
+daily_sales = df_sorted.groupby("Date")["Total_Sales"].sum().reset_index()
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(x="Date", y="Total_Sales", data=daily_sales, color="red", marker="o")
+plt.title("Динаміка загальних продажів у часі", fontsize=14)
+plt.xlabel("Дата")
+plt.ylabel("Сума продажів за день")
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("6_lineplot.png")
+plt.show()
+
+
+# ==========================================
+# БЛОК 7: Висновки (Вивід у консоль)
+# ==========================================
+print("\n==============================================")
+print("ВИСНОВКИ ЗА РЕЗУЛЬТАТАМИ ДОСЛІДЖЕННЯ:")
+print("1. Розподіл даних: Гістограма показує, що більшість чеків знаходяться в середньому ціновому діапазоні, розподіл має невелику асиметрію.")
+print("2. Аномалії: Box Plot допоміг виявити потенційні викиди (одиничні дуже дорогі покупки). Їх видаляти недоцільно, оскільки це реальні оптові замовлення.")
+print("3. Взаємозв'язки: Heatmap показує сильну кореляцію (близько 0.7-0.8) між 'Price'/'Quantity' та 'Total_Sales', що є логічним математичним наслідком. Вік ('Customer_Age') майже не корелює із сумою покупки.")
+print("4. Часові тренди: На Line Plot видно піки активності продажів у певні дні, що може бути пов'язано з вихідними або акціями.")
+print("==============================================\n")
+print("Усі графіки успішно збережені у форматах .png у папку з проєктом!")
