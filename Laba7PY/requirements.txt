@@ -1,0 +1,3 @@
+pip install aiogram aiohttp aiosqlite
+пітон не вище 3.12
+запустити бота через термінал командою: python bot.py
